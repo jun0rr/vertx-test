@@ -31,10 +31,10 @@ public class TestVertx {
       System.out.printf("   Headers:%n");
       hdr.forEach((k,v)->System.out.printf("    - %s: %s%n", k, v));
       req.setExpectMultipart(true);
-      MultiMap form = req.formAttributes();
-      System.out.printf("   Form Attributes:%n");
-      form.forEach((k,v)->System.out.printf("    - %s=%s%n", k, v));
       req.bodyHandler(buf->{
+        MultiMap form = req.formAttributes();
+        System.out.printf("   Form Attributes:%n");
+        form.forEach((k,v)->System.out.printf("    - %s=%s%n", k, v));
         System.out.printf("   Body:%n");
         System.out.printf("    - %s%n", buf.toString());
       });
