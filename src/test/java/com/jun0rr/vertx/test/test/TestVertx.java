@@ -4,10 +4,13 @@
  */
 package com.jun0rr.vertx.test.test;
 
+import com.jun0rr.uncheck.Uncheck;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.http.HttpServer;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.concurrent.CountDownLatch;
 import org.junit.jupiter.api.Test;
 
@@ -18,6 +21,7 @@ import org.junit.jupiter.api.Test;
 public class TestVertx {
   
   @Test public void test() throws InterruptedException {
+    DateTimeFormatter fmt = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
     VertxOptions opt = new VertxOptions();
     Vertx vertx = Vertx.vertx(opt);
     HttpServer server = vertx.createHttpServer();
@@ -30,7 +34,7 @@ public class TestVertx {
       MultiMap hdr = req.headers();
       System.out.printf("   Headers:%n");
       hdr.forEach((k,v)->System.out.printf("    - %s: %s%n", k, v));
-      req.setExpectMultipart(true);
+      //req.setExpectMultipart(true);
       req.bodyHandler(buf->{
         MultiMap form = req.formAttributes();
         System.out.printf("   Form Attributes:%n");
@@ -38,18 +42,22 @@ public class TestVertx {
         System.out.printf("   Body:%n");
         System.out.printf("    - %s%n", buf.toString());
       });
-      req.response()
-          .setStatusCode(200)
-          .putHeader("Server", "Vertx.core-4.4.3")
-          .putHeader("Content-Type", "text/html; charset=UTF-8");
-      req.response().end("Hello Vertx");
+      vertx.executeBlocking(p->{
+        LocalDateTime now = LocalDateTime.now();
+        Uncheck.call(()->Thread.sleep(5000));
+        req.response()
+            .setStatusCode(200)
+            .putHeader("Server", "Vertx.core-4.4.3")
+            .putHeader("Content-Type", "text/html; charset=UTF-8");
+        req.response().end(String.format("[%s] Hello Vertx - %s(%d)", fmt.format(now), Thread.currentThread().getName(), Thread.currentThread().getId()));
+      }, false);
       if(req.uri().contains("shutdown")) {
         cd.countDown();
       }
     });
     server.listen(20202).andThen(res->{
       if(res.succeeded()) {
-        System.out.printf("* Started Vertx HttpServer: localhost:%d%n", res.result().actualPort());
+        System.out.printf("* Started Vertx HttpServer => localhost:%d%n", res.result().actualPort());
       }
       else {
         System.err.printf("#ERROR: %s%n", res.cause().toString());
