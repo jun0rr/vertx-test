@@ -34,8 +34,9 @@ public class TestVertx {
       MultiMap hdr = req.headers();
       System.out.printf("   Headers:%n");
       hdr.forEach((k,v)->System.out.printf("    - %s: %s%n", k, v));
-      //req.setExpectMultipart(true);
+      req.setExpectMultipart(true);
       req.bodyHandler(buf->{
+        System.out.printf("[%s] BodyHandler - %s(%d)%n", fmt.format(LocalDateTime.now()), Thread.currentThread().getName(), Thread.currentThread().getId());
         MultiMap form = req.formAttributes();
         System.out.printf("   Form Attributes:%n");
         form.forEach((k,v)->System.out.printf("    - %s=%s%n", k, v));
@@ -55,15 +56,9 @@ public class TestVertx {
         cd.countDown();
       }
     });
-    server.listen(20202).andThen(res->{
-      if(res.succeeded()) {
-        System.out.printf("* Started Vertx HttpServer => localhost:%d%n", res.result().actualPort());
-      }
-      else {
-        System.err.printf("#ERROR: %s%n", res.cause().toString());
-        res.cause().printStackTrace();
-      }
-    });
+    server.listen(20202)
+        .onSuccess(s->System.out.printf("* Started Vertx HttpServer => localhost:%d%n", s.actualPort()))
+        .onFailure(s->System.err.printf("#ERROR: %s%n", s.toString()));
     cd.await();
     server.close();
   }
